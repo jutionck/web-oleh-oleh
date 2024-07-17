@@ -83,4 +83,16 @@ class Order_model extends CI_Model
     $query = $this->db->get('orders');
     return $query->row();
   }
+
+  public function get_orders_by_seller($seller_id)
+  {
+    $this->db->select('orders.*, order_items.product_id, order_items.quantity, order_items.price, products.name, products.image_url');
+    $this->db->from('orders');
+    $this->db->join('order_items', 'orders.id = order_items.order_id');
+    $this->db->join('products', 'order_items.product_id = products.id');
+    $this->db->where('products.seller_id', $seller_id);
+    $this->db->order_by('orders.created_at', 'DESC');
+    $query = $this->db->get();
+    return $query->result();
+  }
 }

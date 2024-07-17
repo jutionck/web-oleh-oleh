@@ -16,6 +16,11 @@ $route['checkout/success'] = 'checkout/success';
 
 $route['order/history'] = 'order/history';
 
+$route['seller/product'] = 'productcontroller';
+$route['seller/product/add'] = 'productcontroller/add_product';
+
+
+
 // Login / Register
 $route['auth/register'] = 'auth/register';
 $route['auth/login'] = 'auth/login';

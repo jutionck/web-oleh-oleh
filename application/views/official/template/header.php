@@ -60,7 +60,12 @@
             <?= $this->session->userdata('fullname') ?>
           </button>
           <ul class="dropdown-menu" style="z-index: 1050;">
-            <li><a class="dropdown-item" href="<?= site_url('order/history') ?>">Riwayat Pemesanan</a></li>
+            <?php if ($this->session->userdata('role') === 'seller') : ?>
+              <li><a class="dropdown-item" href="<?= site_url('seller/product') ?>">Data Product</a></li>
+              <li><a class="dropdown-item" href="<?= site_url('seller') ?>">Data Penjualan</a></li>
+            <?php else : ?>
+              <li><a class="dropdown-item" href="<?= site_url('order/history') ?>">Riwayat Pemesanan</a></li>
+            <?php endif; ?>
             <li><a class="dropdown-item" href="<?= site_url('auth/logout') ?>">Logout</a></li>
           </ul>
         <?php else : ?>

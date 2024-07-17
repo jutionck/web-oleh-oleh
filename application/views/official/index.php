@@ -34,7 +34,7 @@
       <div class="col-md-4 mb-4">
         <div class="product-card position-relative">
           <div class="image-container position-relative">
-            <img src="<?= base_url('assets/official/images/products/') . $product->image_url ?>" class="img-fluid" alt="Product Image">
+            <img src="<?= base_url('assets/upload/') . $product->image_url ?>" class="img-fluid" alt="Product Image">
             <a href="#" class="btn-view" data-bs-toggle="modal" data-bs-target="#productModal-<?= $product->id ?>">VIEW DETAILS</a>
           </div>
           <div class="card-content">
@@ -128,7 +128,7 @@
             html += `<div class="col-md-4 mb-4">
                             <div class="product-card position-relative">
                               <div class="image-container position-relative">
-                                <img src="<?= base_url('assets/official/images/products/') ?>${product.image_url}" class="img-fluid" alt="Product Image">
+                                <img src="<?= base_url('assets/upload/') ?>${product.image_url}" class="img-fluid" alt="Product Image">
                                 <a href="#" class="btn-view" data-bs-toggle="modal" data-bs-target="#productModal-${product.id}">VIEW DETAILS</a>
                               </div>
                               <div class="card-content">
