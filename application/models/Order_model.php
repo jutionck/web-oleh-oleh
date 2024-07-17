@@ -33,14 +33,23 @@ class Order_model extends CI_Model
     $this->db->insert('order_items', $data);
   }
 
+  public function get_orders_by_user_id($user_id)
+  {
+    $this->db->select('orders.*, customers.province_id, customers.regency_id, customers.district_id, customers.village_id, customers.address');
+    $this->db->from('orders');
+    $this->db->join('customers', 'customers.user_id = orders.customer_id');
+    $this->db->where('orders.customer_id', $user_id);
+    $this->db->order_by('orders.created_at', 'DESC');
+    return $this->db->get()->result();
+  }
+
   public function get_order_items($order_id)
   {
     $this->db->select('order_items.*, products.name, products.image_url');
     $this->db->from('order_items');
-    $this->db->join('products', 'order_items.product_id = products.id');
+    $this->db->join('products', 'products.id = order_items.product_id');
     $this->db->where('order_items.order_id', $order_id);
-    $query = $this->db->get();
-    return $query->result();
+    return $this->db->get()->result();
   }
 
   public function get_orders_by_customer($customer_id)
@@ -66,5 +75,12 @@ class Order_model extends CI_Model
   {
     $this->db->where('id', $order_id);
     $this->db->update('orders', $data);
+  }
+
+  public function get_order_by_id($order_id)
+  {
+    $this->db->where('id', $order_id);
+    $query = $this->db->get('orders');
+    return $query->row();
   }
 }

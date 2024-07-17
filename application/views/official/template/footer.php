@@ -1,3 +1,4 @@
+</div>
 <footer class="bg-light text-center text-lg-start mt-auto">
   <div class="container p-4">
     <div class="row">

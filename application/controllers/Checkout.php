@@ -92,7 +92,6 @@ class Checkout extends CI_Controller
       $total_price += $item->quantity * $item->price;
     }
 
-    // Simpan informasi pengiriman jika belum ada
     $customer = $this->Customer_model->get_customer_by_user_id($user_id);
     if (!$customer) {
       $customer_data = array(
@@ -115,63 +114,62 @@ class Checkout extends CI_Controller
       $this->Customer_model->update_customer($user_id, $customer_data);
     }
 
-    // Prepare transaction details
-    $transaction_details = array(
-      'order_id' => rand(), // Anda dapat menggunakan logika order_id sendiri di sini
-      'gross_amount' => $total_price
-    );
+    $payment_method = $this->input->post('payment_method');
 
-    // Simpan pesanan sementara sebelum pembayaran berhasil
-    $order_id = $this->Order_model->create_order($user_id, $total_price, 'pending', 'midtrans');
+    $order_id = $this->Order_model->create_order($user_id, $total_price, 'pending', $payment_method);
 
-    // Prepare item details
-    $item_details = array();
     foreach ($cart_items as $item) {
-      $item_details[] = array(
-        'id' => $item->product_id,
-        'price' => $item->price,
-        'quantity' => $item->quantity,
-        'name' => $item->name
-      );
-
-      // Tambahkan item pesanan ke tabel order_items
       $this->Order_model->add_order_item($order_id, $item->product_id, $item->quantity, $item->price);
     }
 
-    // Prepare customer details
-    $customer_details = array(
-      'first_name' => $this->session->userdata('username'),
-      'email' => $this->session->userdata('email'),
-      'phone' => "08123456789",
-      'shipping_address' => array(
+    if ($payment_method == 'cod') {
+      $this->Cart_model->clear_cart_items($cart->id);
+      $this->Cart_model->delete_cart($cart->id);
+      redirect('checkout/success');
+    } else {
+      $transaction_details = array(
+        'order_id' => $order_id,
+        'gross_amount' => $total_price,
+      );
+
+      $item_details = array();
+      foreach ($cart_items as $item) {
+        $item_details[] = array(
+          'id' => $item->product_id,
+          'price' => $item->price,
+          'quantity' => $item->quantity,
+          'name' => $item->name
+        );
+      }
+
+      $customer_details = array(
         'first_name' => $this->session->userdata('username'),
-        'address' => $customer_data['address'],
-        'city' => $customer->regency_name,
-        'postal_code' => "12345",
+        'email' => $this->session->userdata('email'),
         'phone' => "08123456789",
-        'country_code' => 'IDN'
-      )
-    );
+        'shipping_address' => array(
+          'first_name' => $this->session->userdata('username'),
+          'address' => $customer_data['address'],
+          'city' => $customer->regency_name,
+          'postal_code' => "12345",
+          'phone' => "08123456789",
+          'country_code' => 'IDN'
+        )
+      );
 
-    // Prepare transaction data
-    $transaction_data = array(
-      'transaction_details' => $transaction_details,
-      'item_details' => $item_details,
-      'customer_details' => $customer_details
-    );
+      $transaction_data = array(
+        'transaction_details' => $transaction_details,
+        'item_details' => $item_details,
+        'customer_details' => $customer_details
+      );
 
-    // Get Snap Payment Page URL
-    try {
-      $snapToken = \Midtrans\Snap::getSnapToken($transaction_data);
-      $data['snap_token'] = $snapToken;
-    } catch (Exception $e) {
-      echo $e->getMessage();
+      try {
+        $snapToken = \Midtrans\Snap::getSnapToken($transaction_data);
+        echo json_encode(['snap_token' => $snapToken]);
+      } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+      }
     }
-
-    $data['title'] = 'Payment';
-    $this->load->view('official/checkout/payment', $data);
   }
-
 
   public function payment_callback()
   {
@@ -189,16 +187,27 @@ class Checkout extends CI_Controller
         'payment_method' => $payment_type,
       );
 
-      // Update order status
       $this->Order_model->update_order_status($order_id, $data);
+      if ($transaction_status == 'capture' || $transaction_status == 'settlement') {
+        $order = $this->Order_model->get_order_by_id($order_id);
+        if ($order) {
+          $this->Cart_model->clear_cart_by_user_id($order->customer_id);
+        }
+      }
     }
   }
 
-
   public function success()
   {
+    // $user_id = $this->session->userdata('user_id');
+
+    // if ($user_id) {
+    //   $cart_id = $this->Cart_model->get_cart_id_by_user_id($user_id);
+    //   $this->Cart_model->clear_cart_items($cart_id);
+    //   $this->Cart_model->delete_cart($cart_id);
+    // }
     $data = [
-      'title'      => 'BeliYuk - Web Oleh-oleh',
+      'title' => 'BeliYuk - Web Oleh-oleh',
     ];
     $page = '/official/checkout/order_success';
     pageOfficial($page, $data);

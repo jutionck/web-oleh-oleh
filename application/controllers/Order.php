@@ -8,6 +8,7 @@ class Order extends CI_Controller
   {
     parent::__construct();
     $this->load->model('Order_model');
+    $this->load->model('Customer_model');
     $this->load->library('session');
   }
 
@@ -18,10 +19,30 @@ class Order extends CI_Controller
       redirect('auth/login');
     }
 
-    $data['title'] = 'Riwayat Belanja';
-    $data['order_history'] = $this->Order_model->get_order_history_by_user_id($user_id);
+    $orders = $this->Order_model->get_orders_by_user_id($user_id);
+    foreach ($orders as $order) {
+      $order->items = $this->Order_model->get_order_items($order->id);
+    }
 
-    $page = '/official/history-order/index';
+    $data = [
+      'title' => 'Riwayat Belanja',
+      'orders' => $orders
+    ];
+
+    $page = '/official/order/history';
     pageOfficial($page, $data);
+  }
+
+  public function confirm_payment($order_id)
+  {
+    $user_id = $this->session->userdata('user_id');
+    if (!$user_id) {
+      redirect('');
+    }
+    $data = [
+      'status' => 'completed'
+    ];
+    $this->Order_model->update_order_status($order_id, $data);
+    redirect('order/history');
   }
 }

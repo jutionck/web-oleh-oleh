@@ -60,10 +60,38 @@ class Cart_model extends CI_Model
     return $query->result();
   }
 
-
   public function clear_cart($cart_id)
   {
     $this->db->where('cart_id', $cart_id);
     $this->db->delete('cart_items');
+  }
+
+  public function get_cart_id_by_user_id($user_id)
+  {
+    $this->db->select('id');
+    $this->db->from('carts');
+    $this->db->where('user_id', $user_id);
+    $query = $this->db->get();
+    return $query->row()->id;
+  }
+
+  public function clear_cart_by_user_id($user_id)
+  {
+    $this->db->where('user_id', $user_id);
+    $this->db->delete('cart_items');
+    $this->db->where('user_id', $user_id);
+    $this->db->delete('carts');
+  }
+
+  public function clear_cart_items($cart_id)
+  {
+    $this->db->where('cart_id', $cart_id);
+    $this->db->delete('cart_items');
+  }
+
+  public function delete_cart($cart_id)
+  {
+    $this->db->where('id', $cart_id);
+    $this->db->delete('carts');
   }
 }

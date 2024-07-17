@@ -1,12 +1,11 @@
 <div class="container mt-5">
   <h2>Checkout</h2>
-  <form action="<?= site_url('checkout/place_order') ?>" method="post">
+  <form id="checkout-form" action="<?= site_url('checkout/place_order') ?>" method="post">
     <div class="row">
       <div class="col-md-8">
         <h4>Shipping Information</h4>
         <?php if (!$customer) : ?>
-          <div class="form-group">
-            <label for="province">Province:</label>
+          <div class="form-floating mb-3">
             <select class="form-select" id="province" name="province" required>
               <option value="">Select Province</option>
               <?php foreach ($provinces as $province) : ?>
@@ -14,54 +13,52 @@
               <?php endforeach; ?>
             </select>
           </div>
-          <div class="form-group">
-            <label for="regency">Regency:</label>
+          <div class="form-floating mb-3">
             <select class="form-select" id="regency" name="regency" required>
               <option value="">Select Regency</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="district">District:</label>
+          <div class="form-floating mb-3">
             <select class="form-select" id="district" name="district" required>
               <option value="">Select District</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="village">Village:</label>
+          <div class="form-floating mb-3">
             <select class="form-select" id="village" name="village" required>
               <option value="">Select Village</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="address">Address:</label>
+          <div class="form-floating mb-3">
             <input type="text" class="form-control" id="address" name="address" required>
+            <label for="floatingInput">Alamat Lengkap</label>
           </div>
         <?php else : ?>
-          <div class="form-group">
-            <label for="province">Province:</label>
-            <input type="text" class="form-control" value="<?= $customer->province_name ?>" disabled>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" value="<?= $customer->province_name ?>" name="province" readonly>
+            <label for="floatingInput">Provinsi</label>
           </div>
-          <div class="form-group">
-            <label for="regency">Regency:</label>
-            <input type="text" class="form-control" value="<?= $customer->regency_name ?>" disabled>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" value="<?= $customer->regency_name ?>" name="regency" readonly>
+            <label for="floatingInput">Kabupaten</label>
           </div>
-          <div class="form-group">
-            <label for="district">District:</label>
-            <input type="text" class="form-control" value="<?= $customer->district_name ?>" disabled>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" value="<?= $customer->district_name ?>" name="district" readonly>
+            <label for="floatingInput">Kecamatan</label>
           </div>
-          <div class="form-group">
-            <label for="village">Village:</label>
-            <input type="text" class="form-control" value="<?= $customer->village_name ?>" disabled>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" value="<?= $customer->village_name ?>" name="village" readonly>
+            <label for="floatingInput">Kelurahan</label>
           </div>
-          <div class="form-group">
-            <label for="address">Address:</label>
-            <input type="text" class="form-control" value="<?= $customer->address ?>" disabled>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" value="<?= $customer->address ?>" name="address" readonly>
+            <label for="floatingInput">Alamat Lengkap</label>
           </div>
         <?php endif; ?>
-        <h4>COD</h4>
-        <div class="form-group">
-          <select class="form-select" name="payment_method" required>
+        <h4>Payment Method</h4>
+        <div class="form-floating mb-3">
+          <select class="form-select" name="payment_method" id="payment_method" required>
             <option value="cod">Cash on Delivery (COD)</option>
+            <option value="bank_transfer">Bank Transfer</option>
           </select>
         </div>
       </div>
@@ -76,9 +73,14 @@
               <?php $total += $item->quantity * $item->price; ?>
             </li>
           <?php endforeach; ?>
-          <li class="list-group-item">Total: <?= number_format($total, 2) ?></li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Total:</span>
+            <span class="fw-bold"><?= number_format($total, 2) ?></span>
+          </li>
         </ul>
-        <button type="submit" class="btn btn-primary btn-block mt-3">Place Order</button>
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-dark btn-block mt-3" id="place-order">Proses</button>
+        </div>
       </div>
     </div>
   </form>
@@ -86,6 +88,8 @@
 
 <script>
   $(document).ready(function() {
+    $('.form-select').select2();
+
     $('#province').change(function() {
       var province_id = $(this).val();
       $.ajax({
@@ -99,6 +103,7 @@
           $.each(JSON.parse(data), function(key, value) {
             $('#regency').append('<option value="' + value.id + '">' + value.name + '</option>');
           });
+          $('#regency').trigger('change');
         }
       });
     });
@@ -116,6 +121,7 @@
           $.each(JSON.parse(data), function(key, value) {
             $('#district').append('<option value="' + value.id + '">' + value.name + '</option>');
           });
+          $('#district').trigger('change');
         }
       });
     });
@@ -133,10 +139,45 @@
           $.each(JSON.parse(data), function(key, value) {
             $('#village').append('<option value="' + value.id + '">' + value.name + '</option>');
           });
+          $('#village').trigger('change');
         }
       });
+    });
+
+    $('#checkout-form').submit(function(e) {
+      e.preventDefault();
+
+      var payment_method = $('#payment_method').val();
+      if (payment_method === 'cod') {
+        this.submit();
+      } else {
+        $.ajax({
+          url: '<?= site_url('checkout/place_order') ?>',
+          method: 'POST',
+          data: $(this).serialize(),
+          success: function(data) {
+            var response = JSON.parse(data);
+            if (response.snap_token) {
+              snap.pay(response.snap_token, {
+                onSuccess: function(result) {
+                  window.location.href = '<?= site_url('checkout/success') ?>';
+                },
+                onPending: function(result) {
+                  window.location.href = '<?= site_url('checkout/success') ?>';
+                },
+                onError: function(result) {
+                  alert('Payment failed');
+                },
+                onClose: function() {
+                  alert('Payment popup closed');
+                }
+              });
+            }
+          }
+        });
+      }
     });
   });
 </script>
 
-<script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="<CLIENT-KEY>"></script>
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="<?= $this->config->item('midtrans_client_key') ?>"></script>

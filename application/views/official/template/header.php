@@ -9,7 +9,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
   <link rel="shortcut icon" href="<?= base_url('assets/official/') ?>images/logooo.png" type="image/x-icon" />
   <link rel="stylesheet" href="<?= base_url('assets/official/') ?>css/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 </head>
 
 <body>
@@ -156,10 +158,8 @@
 
   <script>
     $(document).ready(function() {
-      // Fetch and display cart items on page load
       fetchCartItems();
 
-      // Add to Cart event listener
       $(document).on('click', '.add-to-cart', function() {
         <?php if (!$this->session->userdata('username')) : ?>
           $('#productModal').modal('hide');
@@ -242,7 +242,6 @@
         });
       });
 
-      // Increase quantity event listener
       $(document).on('click', '.increase-qty', function() {
         let id = $(this).data('id');
         let input = $('.qty-input[data-id="' + id + '"]');
@@ -250,7 +249,6 @@
         input.val(currentValue + 1);
       });
 
-      // Decrease quantity event listener
       $(document).on('click', '.decrease-qty', function() {
         let id = $(this).data('id');
         let input = $('.qty-input[data-id="' + id + '"]');
@@ -260,7 +258,6 @@
         }
       });
 
-      // Remove from cart event listener
       $(document).on('click', '.remove-from-cart', function() {
         let rowid = $(this).data('id');
 
@@ -272,10 +269,12 @@
           },
           dataType: "json",
           success: function(response) {
-            $('#cartIcon .badge').text(response.total_items); // Update cart icon with total items
-            fetchCartItems(); // Refresh cart items
+            $('#cartIcon .badge').text(response.total_items);
+            fetchCartItems();
           }
         });
       });
     });
   </script>
+
+  <div class="wrapper" style="min-height:100dvh">
