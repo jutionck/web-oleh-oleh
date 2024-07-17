@@ -9,7 +9,7 @@ class Order_model extends CI_Model
     parent::__construct();
   }
 
-  public function create_order($customer_id, $total_price, $status = 'pending', $payment_method = null)
+  public function create_order($customer_id, $total_price, $status, $payment_method)
   {
     $data = array(
       'customer_id' => $customer_id,
@@ -60,5 +60,11 @@ class Order_model extends CI_Model
     $this->db->order_by('orders.created_at', 'DESC');
     $query = $this->db->get();
     return $query->result();
+  }
+
+  public function update_order_status($order_id, $data)
+  {
+    $this->db->where('id', $order_id);
+    $this->db->update('orders', $data);
   }
 }

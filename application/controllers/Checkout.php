@@ -12,6 +12,15 @@ class Checkout extends CI_Controller
     $this->load->model('Customer_model');
     $this->load->model('Location_model');
     $this->load->library('session');
+    $this->load->config('midtrans');
+    $this->load->helper('url');
+
+    // Load Midtrans library
+    require_once(APPPATH . 'vendor/autoload.php');
+    \Midtrans\Config::$serverKey = $this->config->item('midtrans_server_key');
+    \Midtrans\Config::$isProduction = $this->config->item('midtrans_is_production');
+    \Midtrans\Config::$isSanitized = $this->config->item('midtrans_is_sanitized');
+    \Midtrans\Config::$is3ds = $this->config->item('midtrans_is_3ds');
   }
 
   public function index()
@@ -106,22 +115,85 @@ class Checkout extends CI_Controller
       $this->Customer_model->update_customer($user_id, $customer_data);
     }
 
-    $order_data = array(
-      'customer_id' => $user_id,
-      'total_price' => $total_price,
-      'status' => 'pending',
-      'payment_method' => $this->input->post('payment_method') ? $this->input->post('payment_method') : 'COD'
+    // Prepare transaction details
+    $transaction_details = array(
+      'order_id' => rand(), // Anda dapat menggunakan logika order_id sendiri di sini
+      'gross_amount' => $total_price
     );
 
-    $order_id = $this->Order_model->create_order($user_id, $total_price, 'pending', $this->input->post('payment_method'));
+    // Simpan pesanan sementara sebelum pembayaran berhasil
+    $order_id = $this->Order_model->create_order($user_id, $total_price, 'pending', 'midtrans');
+
+    // Prepare item details
+    $item_details = array();
     foreach ($cart_items as $item) {
+      $item_details[] = array(
+        'id' => $item->product_id,
+        'price' => $item->price,
+        'quantity' => $item->quantity,
+        'name' => $item->name
+      );
+
+      // Tambahkan item pesanan ke tabel order_items
       $this->Order_model->add_order_item($order_id, $item->product_id, $item->quantity, $item->price);
     }
 
-    $this->Cart_model->clear_cart($cart->id);
+    // Prepare customer details
+    $customer_details = array(
+      'first_name' => $this->session->userdata('username'),
+      'email' => $this->session->userdata('email'),
+      'phone' => "08123456789",
+      'shipping_address' => array(
+        'first_name' => $this->session->userdata('username'),
+        'address' => $customer_data['address'],
+        'city' => $customer->regency_name,
+        'postal_code' => "12345",
+        'phone' => "08123456789",
+        'country_code' => 'IDN'
+      )
+    );
 
-    redirect('checkout/success');
+    // Prepare transaction data
+    $transaction_data = array(
+      'transaction_details' => $transaction_details,
+      'item_details' => $item_details,
+      'customer_details' => $customer_details
+    );
+
+    // Get Snap Payment Page URL
+    try {
+      $snapToken = \Midtrans\Snap::getSnapToken($transaction_data);
+      $data['snap_token'] = $snapToken;
+    } catch (Exception $e) {
+      echo $e->getMessage();
+    }
+
+    $data['title'] = 'Payment';
+    $this->load->view('official/checkout/payment', $data);
   }
+
+
+  public function payment_callback()
+  {
+    $json_result = file_get_contents('php://input');
+    $result = json_decode($json_result, true);
+
+    if ($result) {
+      $order_id = $result['order_id'];
+      $transaction_status = $result['transaction_status'];
+      $payment_type = $result['payment_type'];
+      $fraud_status = isset($result['fraud_status']) ? $result['fraud_status'] : null;
+
+      $data = array(
+        'status' => $transaction_status,
+        'payment_method' => $payment_type,
+      );
+
+      // Update order status
+      $this->Order_model->update_order_status($order_id, $data);
+    }
+  }
+
 
   public function success()
   {
